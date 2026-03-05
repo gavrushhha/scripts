@@ -46,7 +46,10 @@ if not exist "%SOURCE%" (
 
 echo Source: %SOURCE%
 echo Dest:   %DEST%
-if "%VERSIONED%"=="1" echo Mode: versioned ^(name_YYYYMMDD_HHmmss.ext^)
+if "%VERSIONED%"=="1" (
+    echo Mode: VERSIONED - each change saved as new file in folder
+    echo.
+)
 echo Log:    %LOG%
 echo Stop: Ctrl+C
 echo.
@@ -66,6 +69,7 @@ set "SRC_BASE=%SOURCE%\"
 :ver_cycle
 for /f "skip=1" %%T in ('wmic os get localdatetime 2^>nul') do set "DT=%%T" & goto :ver_dt_done
 :ver_dt_done
+set "DT=!DT: =!"
 set "DT=!DT:~0,8!_!DT:~8,6!"
 for /f "delims=" %%F in ('dir /s /b /a-d "%SOURCE%\*" 2^>nul') do (
     set "SRCF=%%F"
@@ -76,38 +80,42 @@ for /f "delims=" %%F in ('dir /s /b /a-d "%SOURCE%\*" 2^>nul') do (
     set "DIRP=!DIRP:%SRC_BASE%=!"
     if "!DIRP!"=="" (set "DESTDIR=%DEST%\!BASE!\") else (set "DESTDIR=%DEST%\!DIRP!!BASE!\")
     if not exist "!DESTDIR!" mkdir "!DESTDIR!" 2>nul
-    set "DESTF=!DESTDIR!!BASE!_!DT!!EXT!"
     call :ver_copy_one
 )
 timeout /t 60 /nobreak >nul
 goto ver_cycle
 
 :ver_copy_one
-set "NEED=1"
-for /f "delims=" %%V in ('dir /b "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do set "NEED=0"
-if "!NEED!"=="1" (
-    copy /Y "!SRCF!" "!DESTF!" >nul 2>&1 && echo [%time%] !REL! -^> !BASE!_!DT!!EXT! >> "%LOG%" && echo Copied: !REL!
-    goto :eof
-)
-set "LATEST=00000000000000"
-for /f "tokens=2,3 delims=_" %%A in ('dir /b /o-n "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do (
-    set "LATEST=%%A%%B"
-    set "LATEST=!LATEST:!EXT!=!"
-    if "!LATEST!" gtr "00000000000000" goto :ver_do_compare
-)
-goto :eof
-:ver_do_compare
 set "WMICPATH=!SRCF:\=\\!"
 set "SRCMOD=00000000000000"
-for /f "skip=1" %%M in ('wmic datafile where "name='!WMICPATH!'" get lastmodified 2^>nul') do set "SRCMOD=%%M" & goto :ver_compare_done
-:ver_compare_done
+for /f "skip=1" %%M in ('wmic datafile where "name='!WMICPATH!'" get lastmodified 2^>nul') do set "SRCMOD=%%M" & goto :ver_got_src
+:ver_got_src
+set "SRCMOD=!SRCMOD: =!"
 set "SRCMOD=!SRCMOD:~0,14!"
-if "!SRCMOD!" gtr "!LATEST!" (
-    copy /Y "!SRCF!" "!DESTF!" >nul 2>&1 && echo [%time%] !REL! -^> !BASE!_!DT!!EXT! >> "%LOG%" && echo Copied: !REL!
+set "LATEST=00000000000000"
+for /f "delims=" %%V in ('dir /b /o-n "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do (
+    set "VF=%%V"
+    set "VF=!VF:%BASE%=!"
+    set "VF=!VF:_=!"
+    set "VF=!VF:!EXT!=!"
+    set "VF=!VF: =!"
+    if "!VF!" gtr "00000000000000" if "!VF!" lss "99999999999999" set "LATEST=!VF!"
+    if "!LATEST!" gtr "00000000000000" goto :ver_do_copy_check
+)
+:ver_do_copy_check
+if "!SRCMOD!" gtr "!LATEST!" goto :ver_do_copy
+goto :eof
+:ver_do_copy
+set "DESTF=!DESTDIR!!BASE!_!DT!!EXT!"
+if exist "!DESTF!" set "DESTF=!DESTDIR!!BASE!_!DT!_!RANDOM!!EXT!"
+copy /Y "!SRCF!" "!DESTF!" >nul 2>&1
+if exist "!DESTF!" (
+    echo [%time%] !REL! -^> !BASE!_... >> "%LOG%"
+    echo Copied: !REL!
 )
 goto :eof
 
 :usage
 echo Usage: %~nx0 [Config.ini] ["C:\Source" "D:\Dest"]
-echo        Add /V or /VERSIONED for versioned copy ^(name_YYYYMMDD_HHmmss.ext^)
+echo        Add /V or /VERSIONED for versioned copy
 exit /b 1
