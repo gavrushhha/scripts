@@ -5,6 +5,10 @@ set "DEST="
 set "LOG=%~dp0Robocopy.log"
 for %%I in ("%LOG%") do set "LOG=%%~fI"
 
+set "VERSIONED=0"
+if /i "%~1"=="/V" set "VERSIONED=1" & shift
+if /i "%~1"=="/VERSIONED" set "VERSIONED=1" & shift
+
 if "%~1"=="" goto usage
 if /i "%~1"=="Config.ini" goto useconfig
 if "%~2"=="" goto usage
@@ -28,6 +32,8 @@ if not defined DEST (
     echo [ERROR] DestinationFolder not found in config
     exit /b 1
 )
+if /i "%~2"=="/V" set "VERSIONED=1"
+if /i "%~2"=="/VERSIONED" set "VERSIONED=1"
 goto run
 
 :run
@@ -40,19 +46,68 @@ if not exist "%SOURCE%" (
 
 echo Source: %SOURCE%
 echo Dest:   %DEST%
+if "%VERSIONED%"=="1" echo Mode: versioned ^(name_YYYYMMDD_HHmmss.ext^)
 echo Log:    %LOG%
 echo Stop: Ctrl+C
 echo.
 
 if not exist "%LOG%" type nul > "%LOG%"
-echo [%date% %time%] Robocopy started: "%SOURCE%" -^> "%DEST%" >> "%LOG%"
+echo [%date% %time%] Started: "%SOURCE%" -^> "%DEST%" >> "%LOG%"
+
+if "%VERSIONED%"=="1" goto versioned_loop
 
 robocopy "%SOURCE%" "%DEST%" /E /MON:1 /MOT:1 /R:3 /W:5 /LOG+:"%LOG%" /TEE
 if errorlevel 8 echo [%date% %time%] Robocopy had errors. >> "%LOG%"
 echo Done.
 exit /b 0
 
+:versioned_loop
+set "SRC_BASE=%SOURCE%\"
+:ver_cycle
+for /f "skip=1" %%T in ('wmic os get localdatetime 2^>nul') do set "DT=%%T" & goto :ver_dt_done
+:ver_dt_done
+set "DT=!DT:~0,8!_!DT:~8,6!"
+for /f "delims=" %%F in ('dir /s /b /a-d "%SOURCE%\*" 2^>nul') do (
+    set "SRCF=%%F"
+    set "REL=!SRCF:%SRC_BASE%=!"
+    set "BASE=%%~nF"
+    set "EXT=%%~xF"
+    set "DIRP=%%~dpF"
+    set "DIRP=!DIRP:%SRC_BASE%=!"
+    if "!DIRP!"=="" (set "DESTDIR=%DEST%\!BASE!\") else (set "DESTDIR=%DEST%\!DIRP!!BASE!\")
+    if not exist "!DESTDIR!" mkdir "!DESTDIR!" 2>nul
+    set "DESTF=!DESTDIR!!BASE!_!DT!!EXT!"
+    call :ver_copy_one
+)
+timeout /t 60 /nobreak >nul
+goto ver_cycle
+
+:ver_copy_one
+set "NEED=1"
+for /f "delims=" %%V in ('dir /b "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do set "NEED=0"
+if "!NEED!"=="1" (
+    copy /Y "!SRCF!" "!DESTF!" >nul 2>&1 && echo [%time%] !REL! -^> !BASE!_!DT!!EXT! >> "%LOG%" && echo Copied: !REL!
+    goto :eof
+)
+set "LATEST=00000000000000"
+for /f "tokens=2,3 delims=_" %%A in ('dir /b /o-n "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do (
+    set "LATEST=%%A%%B"
+    set "LATEST=!LATEST:!EXT!=!"
+    if "!LATEST!" gtr "00000000000000" goto :ver_do_compare
+)
+goto :eof
+:ver_do_compare
+set "WMICPATH=!SRCF:\=\\!"
+set "SRCMOD=00000000000000"
+for /f "skip=1" %%M in ('wmic datafile where "name='!WMICPATH!'" get lastmodified 2^>nul') do set "SRCMOD=%%M" & goto :ver_compare_done
+:ver_compare_done
+set "SRCMOD=!SRCMOD:~0,14!"
+if "!SRCMOD!" gtr "!LATEST!" (
+    copy /Y "!SRCF!" "!DESTF!" >nul 2>&1 && echo [%time%] !REL! -^> !BASE!_!DT!!EXT! >> "%LOG%" && echo Copied: !REL!
+)
+goto :eof
+
 :usage
-echo Usage: %~nx0 Config.ini
-echo    or: %~nx0 "C:\Source" "D:\Dest"
+echo Usage: %~nx0 [Config.ini] ["C:\Source" "D:\Dest"]
+echo        Add /V or /VERSIONED for versioned copy ^(name_YYYYMMDD_HHmmss.ext^)
 exit /b 1
