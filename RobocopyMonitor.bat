@@ -1,9 +1,4 @@
 @echo off
-:: ============================================================================
-:: RobocopyMonitor.bat
-:: Мониторинг исходной папки каждую минуту. С /V — ещё и версии в папках.
-:: Конфиг: ..\config\Config.ini (SourceFolder, DestinationFolder)
-:: ============================================================================
 setlocal EnableDelayedExpansion
 set "SOURCE="
 set "DEST="
@@ -51,7 +46,10 @@ if not exist "%SOURCE%" (
 
 echo Source: %SOURCE%
 echo Dest:   %DEST%
-if "%VERSIONED%"=="1" echo Mode: sync + version on change
+if "%VERSIONED%"=="1" (
+    echo Mode: sync + VERSIONED - current copy + version in folder
+    echo.
+)
 echo Log:    %LOG%
 echo Stop: Ctrl+C
 echo.
@@ -61,25 +59,14 @@ echo [%date% %time%] Started: "%SOURCE%" -^> "%DEST%" >> "%LOG%"
 
 if "%VERSIONED%"=="1" goto versioned_loop
 
-:: Обычный режим: Robocopy с мониторингом (вывод в терминал как раньше)
-:: /E — подкаталоги включая пустые, /MON:1 /MOT:1 — проверка каждую минуту и при изменениях
-:: /R:3 /W:5 — повторы и пауза, /LOG+ /TEE — лог и консоль
 robocopy "%SOURCE%" "%DEST%" /E /MON:1 /MOT:1 /R:3 /W:5 /LOG+:"%LOG%" /TEE
 if errorlevel 8 echo [%date% %time%] Robocopy had errors. >> "%LOG%"
 echo Done.
 exit /b 0
 
 :versioned_loop
-:: Режим с версиями: каждую минуту — один проход Robocopy (вывод в терминал) + сохранение версий только для изменённых файлов
 set "SRC_BASE=%SOURCE%\"
 :ver_cycle
-:: Один проход Robocopy — копирование с той же структурой, полный вывод в терминал
-robocopy "%SOURCE%" "%DEST%" /E /R:3 /W:5 /DCOPY:DA /COPY:DAT /LOG+:"%LOG%" /TEE
-echo.
-echo   Monitor : Waiting for 1 minutes and 1 changes...
-echo    1 mins : 0 changes.
-echo.
-:: Версии только для изменённых: сравниваем с последней версией в папке
 for /f "skip=1" %%T in ('wmic os get localdatetime 2^>nul') do set "DT=%%T" & goto :ver_dt_done
 :ver_dt_done
 set "DT=!DT: =!"
@@ -92,13 +79,14 @@ for /f "delims=" %%F in ('dir /s /b /a-d "%SOURCE%\*" 2^>nul') do (
     set "DIRP=%%~dpF"
     set "DIRP=!DIRP:%SRC_BASE%=!"
     if "!DIRP!"=="" (set "DESTDIR=%DEST%\!BASE!\") else (set "DESTDIR=%DEST%\!DIRP!!BASE!\")
+    if "!DIRP!"=="" (set "DESTCURRENT=%DEST%\!BASE!!EXT!") else (set "DESTCURRENT=%DEST%\!DIRP!!BASE!!EXT!")
     if not exist "!DESTDIR!" mkdir "!DESTDIR!" 2>nul
-    call :ver_save_if_changed
+    call :ver_copy_one
 )
 timeout /t 60 /nobreak >nul
 goto ver_cycle
 
-:ver_save_if_changed
+:ver_copy_one
 set "WMICPATH=!SRCF:\=\\!"
 set "SRCMOD=00000000000000"
 for /f "skip=1" %%M in ('wmic datafile where "name='!WMICPATH!'" get lastmodified 2^>nul') do set "SRCMOD=%%M" & goto :ver_got_src
@@ -113,22 +101,27 @@ for /f "delims=" %%V in ('dir /b /o-n "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do (
     set "VF=!VF:!EXT!=!"
     set "VF=!VF: =!"
     if "!VF!" gtr "00000000000000" if "!VF!" lss "99999999999999" set "LATEST=!VF!"
-    if "!LATEST!" gtr "00000000000000" goto :ver_check
+    if "!LATEST!" gtr "00000000000000" goto :ver_do_copy_check
 )
-:ver_check
-if "!SRCMOD!" gtr "!LATEST!" goto :ver_do_save
+:ver_do_copy_check
+if "!SRCMOD!" gtr "!LATEST!" goto :ver_do_copy
 goto :eof
-:ver_do_save
+:ver_do_copy
+if not "!DIRP!"=="" (
+    set "DESTCURDIR=%DEST%\!DIRP!"
+    if not exist "!DESTCURDIR!" mkdir "!DESTCURDIR!" 2>nul
+)
+copy /Y "!SRCF!" "!DESTCURRENT!" >nul 2>&1
 set "DESTF=!DESTDIR!!BASE!_!DT!!EXT!"
 if exist "!DESTF!" set "DESTF=!DESTDIR!!BASE!_!DT!_!RANDOM!!EXT!"
 copy /Y "!SRCF!" "!DESTF!" >nul 2>&1
 if exist "!DESTF!" (
-    echo [%time%] Version: !REL! -^> !BASE!_!DT!!EXT! >> "%LOG%"
-    echo Version saved: !REL!
+    echo [%time%] !REL! -^> current + !BASE!_... >> "%LOG%"
+    echo Copied: !REL!
 )
 goto :eof
 
 :usage
-echo Usage: %~nx0 Config.ini   [или "C:\Source" "D:\Dest"]
-echo        /V или /VERSIONED — синхрон + версии при изменении
+echo Usage: %~nx0 [Config.ini] ["C:\Source" "D:\Dest"]
+echo        Add /V or /VERSIONED for versioned copy
 exit /b 1
