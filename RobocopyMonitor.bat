@@ -3,6 +3,7 @@ setlocal EnableDelayedExpansion
 set "SOURCE="
 set "DEST="
 set "LOG=%~dp0Robocopy.log"
+for %%I in ("%LOG%") do set "LOG=%%~fI"
 
 if "%~1"=="" goto usage
 if /i "%~1"=="Config.ini" goto useconfig
@@ -43,7 +44,11 @@ echo Log:    %LOG%
 echo Stop: Ctrl+C
 echo.
 
+if not exist "%LOG%" type nul > "%LOG%"
+echo [%date% %time%] Robocopy started: "%SOURCE%" -^> "%DEST%" >> "%LOG%"
+
 robocopy "%SOURCE%" "%DEST%" /E /MON:1 /MOT:1 /R:3 /W:5 /LOG+:"%LOG%" /TEE
+if errorlevel 8 echo [%date% %time%] Robocopy had errors. >> "%LOG%"
 echo Done.
 exit /b 0
 
