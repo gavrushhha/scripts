@@ -47,7 +47,7 @@ if not exist "%SOURCE%" (
 echo Source: %SOURCE%
 echo Dest:   %DEST%
 if "%VERSIONED%"=="1" (
-    echo Mode: VERSIONED - each change saved as new file in folder
+    echo Mode: sync + VERSIONED - current copy + version in folder
     echo.
 )
 echo Log:    %LOG%
@@ -79,6 +79,7 @@ for /f "delims=" %%F in ('dir /s /b /a-d "%SOURCE%\*" 2^>nul') do (
     set "DIRP=%%~dpF"
     set "DIRP=!DIRP:%SRC_BASE%=!"
     if "!DIRP!"=="" (set "DESTDIR=%DEST%\!BASE!\") else (set "DESTDIR=%DEST%\!DIRP!!BASE!\")
+    if "!DIRP!"=="" (set "DESTCURRENT=%DEST%\!BASE!!EXT!") else (set "DESTCURRENT=%DEST%\!DIRP!!BASE!!EXT!")
     if not exist "!DESTDIR!" mkdir "!DESTDIR!" 2>nul
     call :ver_copy_one
 )
@@ -106,11 +107,16 @@ for /f "delims=" %%V in ('dir /b /o-n "!DESTDIR!!BASE!_*!EXT!" 2^>nul') do (
 if "!SRCMOD!" gtr "!LATEST!" goto :ver_do_copy
 goto :eof
 :ver_do_copy
+if not "!DIRP!"=="" (
+    set "DESTCURDIR=%DEST%\!DIRP!"
+    if not exist "!DESTCURDIR!" mkdir "!DESTCURDIR!" 2>nul
+)
+copy /Y "!SRCF!" "!DESTCURRENT!" >nul 2>&1
 set "DESTF=!DESTDIR!!BASE!_!DT!!EXT!"
 if exist "!DESTF!" set "DESTF=!DESTDIR!!BASE!_!DT!_!RANDOM!!EXT!"
 copy /Y "!SRCF!" "!DESTF!" >nul 2>&1
 if exist "!DESTF!" (
-    echo [%time%] !REL! -^> !BASE!_... >> "%LOG%"
+    echo [%time%] !REL! -^> current + !BASE!_... >> "%LOG%"
     echo Copied: !REL!
 )
 goto :eof
