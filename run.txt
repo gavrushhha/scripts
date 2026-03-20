@@ -68,3 +68,11 @@ C:\scripts>pyinstaller --noconfirm --clean --onedir --name RobocopyService --add
 C:\scripts>python -m pip install pyinstaller
 Python
 C:\scripts>
+
+
+
+
+C:\scripts\python
+C:\Users\sofja\AppData\Local\Microsoft\WindowsApps\python.exe
+
+C:\scripts>
