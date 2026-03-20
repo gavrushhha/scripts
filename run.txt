@@ -23,5 +23,21 @@ C:\scripts>sc.exe start "RobocopyMirrorService"
 C:\scripts>
 
 
+
+
+
+C:\scripts>python --version
+Python
+C:\scripts>python -m pip --version
+Python
+C:\scripts>python3 --version
+Python
+C:\scripts>python -m pip install --upgrade pip
+Python
+C:\scripts>python -m pip install pyinstaller
+Python
+C:\scripts>
+
+
 sc stop "RobocopyMirrorService" >nul 2>&1
 sc delete "RobocopyMirrorService"
