@@ -21,3 +21,7 @@ C:\scripts>sc.exe start "RobocopyMirrorService"
 
 
 C:\scripts>
+
+
+sc stop "RobocopyMirrorService" >nul 2>&1
+sc delete "RobocopyMirrorService"
