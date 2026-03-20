@@ -51,3 +51,33 @@ sc delete "RobocopyMirrorService" >nul 2>&1
 sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem binPath= "\"C:\scripts2\dist\RobocopyService\RobocopyService.exe\" --run"
 sc.exe start "RobocopyMirrorService"
 sc.exe query "RobocopyMirrorService"
+
+
+
+
+C:\scripts2>sc.exe create "RobocopyMirrorService2" start= auto obj= LocalSystem binPath= "\"C:\scripts2\dist\RobocopyService\RobocopyService.exe\" --run"
+[SC] CreateService: успех
+
+C:\scripts2>sc.exe start "RobocopyMirrorService2"
+[SC] StartService: ошибка: 1053:
+
+Служба не ответила на запрос своевременно.
+
+
+C:\scripts2>sc.exe start "RobocopyMirrorService2"
+[SC] StartService: ошибка: 1053:
+
+Служба не ответила на запрос своевременно.
+
+
+C:\scripts2>sc.exe query "RobocopyMirrorService2"
+
+SERVICE_NAME: RobocopyMirrorService2
+        TYPE               : 10  WIN32_OWN_PROCESS
+        STATE              : 1  STOPPED
+        WIN32_EXIT_CODE    : 0  (0x0)
+        SERVICE_EXIT_CODE  : 0  (0x0)
+        CHECKPOINT         : 0x0
+        WAIT_HINT          : 0x7d0
+
+C:\scripts2>
