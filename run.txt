@@ -41,3 +41,5 @@ set Path=C:\Users\vnj64\.local\bin;%Path%
 sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem binPath= "\"C:\RobocopyService\RobocopyService.exe\" --run"
 
 sc.exe start "RobocopyMirrorService"
+
+C:\scripts2\dist\RobocopyService
