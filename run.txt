@@ -10,12 +10,14 @@ sc.exe stop "RobocopyMirrorService"
 
 
 
-
 C:\scripts>sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem ^
-More?  binPath= "\"C:\Windows\System32\cmd.exe\" /c \"C:\scripts\RunRobocopyMonitor.bat\""
-[SC] OpenSCManager FAILED 5:
+Продолжить?  binPath= "\"C:\Windows\System32\cmd.exe\" /c \"C:\scripts\RunRobocopyMonitor.bat\""
+[SC] CreateService: успех
 
-Access is denied.
+C:\scripts>sc.exe start "RobocopyMirrorService"
+[SC] StartService: ошибка: 1053:
+
+Служба не ответила на запрос своевременно.
 
 
 C:\scripts>
