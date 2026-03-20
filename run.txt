@@ -43,3 +43,11 @@ sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem binPath= "\"C
 sc.exe start "RobocopyMirrorService"
 
 C:\scripts2\dist\RobocopyService
+
+sc stop "RobocopyMirrorService" >nul 2>&1
+sc delete "RobocopyMirrorService" >nul 2>&1
+
+
+sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem binPath= "\"C:\scripts2\dist\RobocopyService\RobocopyService.exe\" --run"
+sc.exe start "RobocopyMirrorService"
+sc.exe query "RobocopyMirrorService"
