@@ -81,3 +81,19 @@ SERVICE_NAME: RobocopyMirrorService2
         WAIT_HINT          : 0x7d0
 
 C:\scripts2>
+
+
+
+
+
+
+
+sc stop "RobocopyMirrorService2" >nul 2>&1
+sc delete "RobocopyMirrorService2" >nul 2>&1
+
+
+sc.exe create "RobocopyMirrorService2" start= auto obj= LocalSystem binPath= "\"C:\scripts2\dist\RobocopyService\RobocopyService.exe\""
+
+
+sc.exe start "RobocopyMirrorService2"
+sc.exe query "RobocopyMirrorService2"
