@@ -36,3 +36,8 @@ set "PATH=%LOCALAPPDATA%\Programs\Python\Python312\Scripts;%PATH%"
 where pyinstaller
 
 set Path=C:\Users\vnj64\.local\bin;%Path%
+
+
+sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem binPath= "\"C:\RobocopyService\RobocopyService.exe\" --run"
+
+sc.exe start "RobocopyMirrorService"
