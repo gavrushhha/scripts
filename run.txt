@@ -22,38 +22,15 @@ C:\scripts>sc.exe start "RobocopyMirrorService"
 
 C:\scripts>
 
+python -c "import sys; print(sys.prefix)"
+set "PATH=<<ВСТАВЬТЕ_ВЫВОД_ИЗ_ПУНКТА_1>>\Scripts;%PATH%"
 
-cd /d C:\scripts
-python -m pip install --upgrade pip
-python -m pip install pyinstaller
-
-
-cd /d C:\scripts
-pyinstaller --noconfirm --clean --onedir --name RobocopyService --add-data "RunRobocopyMonitor.bat;."  --add-data "robocopy;robocopy" --add-data "config;config" RobocopyService.py
+where pyinstaller
+pyinstaller --version
 
 
+set "PATH=%APPDATA%\Python\Python312\Scripts;%PATH%"
+where pyinstaller
 
-
-rmdir /s /q "C:\RobocopyService"
-mkdir "C:\RobocopyService"
-xcopy /e /i "C:\scripts\dist\RobocopyService" "C:\RobocopyService" >nul
-
-sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem ^
-binPath= "\"C:\RobocopyService\RobocopyService.exe\""
-
-
-sc.exe start "RobocopyMirrorService"
-sc.exe query "RobocopyMirrorService"
-
-
-
-type "C:\RobocopyService\robocopy\Service.log"
-type "C:\RobocopyService\robocopy\Robocopy.log"
-
-
-
-
-
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install pyinstaller
-python -m pyinstaller --version
+set "PATH=%LOCALAPPDATA%\Programs\Python\Python312\Scripts;%PATH%"
+where pyinstaller
