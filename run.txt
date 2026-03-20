@@ -7,3 +7,15 @@ sc.exe query "RobocopyMirrorService"
 
 
 sc.exe stop "RobocopyMirrorService"
+
+
+
+
+C:\scripts>sc.exe create "RobocopyMirrorService" start= auto obj= LocalSystem ^
+More?  binPath= "\"C:\Windows\System32\cmd.exe\" /c \"C:\scripts\RunRobocopyMonitor.bat\""
+[SC] OpenSCManager FAILED 5:
+
+Access is denied.
+
+
+C:\scripts>
