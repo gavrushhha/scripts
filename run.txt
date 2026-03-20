@@ -29,11 +29,7 @@ python -m pip install pyinstaller
 
 
 cd /d C:\scripts
-pyinstaller --noconfirm --clean --onedir --name RobocopyService ^
-  --add-data "RunRobocopyMonitor.bat;." ^
-  --add-data "robocopy;robocopy" ^
-  --add-data "config;config" ^
-  RobocopyService.py
+pyinstaller --noconfirm --clean --onedir --name RobocopyService --add-data "RunRobocopyMonitor.bat;."  --add-data "robocopy;robocopy" --add-data "config;config" RobocopyService.py
 
 
 
@@ -53,3 +49,22 @@ sc.exe query "RobocopyMirrorService"
 
 type "C:\RobocopyService\robocopy\Service.log"
 type "C:\RobocopyService\robocopy\Robocopy.log"
+
+
+C:\scripts>python -m pip install pyinstaller
+Python
+C:\scripts>pyinstaller --noconfirm --clean --onedir --name RobocopyService --add-data "RunRobocopyMonitor.bat;."  --add-data "robocopy;robocopy" --add-data "config;config" RobocopyService.py
+"pyinstaller" не является внутренней или внешней
+командой, исполняемой программой или пакетным файлом.
+
+C:\scripts>python -m pip install --upgrade pip
+Python
+C:\scripts>python3 -m pip install --upgrade pip
+Python
+C:\scripts>pyinstaller --noconfirm --clean --onedir --name RobocopyService --add-data "RunRobocopyMonitor.bat;."  --add-data "robocopy;robocopy" --add-data "config;config" RobocopyService.py
+"pyinstaller" не является внутренней или внешней
+командой, исполняемой программой или пакетным файлом.
+
+C:\scripts>python -m pip install pyinstaller
+Python
+C:\scripts>
